@@ -1,0 +1,12 @@
+﻿{
+  "Api": {
+    "BaseUrl": "BaseUrl"
+  },
+  "OAuth2": {
+    "AuthServer": "AuthServer",
+    "TenantId": "TenantId",
+    "ClientId": "ClientId",
+    "ClientSecret": "ClientSecret",
+    "Scope": [ ".default" ]
+  }
+}
