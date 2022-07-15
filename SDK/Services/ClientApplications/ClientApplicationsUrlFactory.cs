@@ -2,16 +2,11 @@
 
 namespace SDK.Services.ClientApplications;
 
-internal sealed class ClientApplicationsUrlsFactory : IClientApplicationsUrlsFactory
+internal sealed class ClientApplicationsUrlFactory : UrlFactoryBase, IClientApplicationUrlsFactory
 {
-    private readonly SdkSettings _sdkSettings;
-
-    public ClientApplicationsUrlsFactory(SdkSettings sdkSettings)
+    public ClientApplicationsUrlFactory(SdkSettings sdkSettings) : base(sdkSettings)
     {
-        _sdkSettings = sdkSettings;
     }
 
-    public string GetUrlForGetAllAsync() => BaseUrl;
-
-    private string BaseUrl => $"{_sdkSettings.BaseUrl}/ClientApplications";
+    public override string BaseUrl => $"{SdkSettings.BaseUrl}/ClientApplications";
 }

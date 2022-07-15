@@ -53,19 +53,23 @@ public sealed class ApiClient : IApiClient
     {
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException($"{response.StatusCode.ToString()}", null, response.StatusCode);
+            throw new HttpRequestException($"{response.StatusCode}", null, response.StatusCode);
         }
     }
 
     public async Task<string?> Post(string url, object payload, CancellationToken cancellationToken = default) =>
-        await (await _httpClient.PostAsync(url, CreateContent(payload))).Content.ReadAsStringAsync(cancellationToken);
+        await (await _httpClient.PostAsync(url, CreateContent(payload), cancellationToken)).Content.ReadAsStringAsync(cancellationToken);
 
     public async Task<TResponse?> Post<TResponse>(string url, object payload, CancellationToken cancellationToken = default)
     {
         var response = await _httpClient.PostAsync(url, CreateContent(payload), cancellationToken);
         EnsureResponseIsSuccess(response);
+        if(response == null)
+        {
+            return default;
+        }
 
-        using var stream = await response.Content.ReadAsStreamAsync();
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
         return await JsonSerializer.DeserializeAsync<TResponse?>(stream, JsonSerializerOptions, cancellationToken);
     }
 
@@ -84,13 +88,35 @@ public sealed class ApiClient : IApiClient
 
     public async Task Delete(string url, CancellationToken cancellationToken = default) => await _httpClient.DeleteAsync(url, cancellationToken);
 
+    public async Task<TResponse> Delete<TResponse>(string url, CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.DeleteAsync(url, cancellationToken);
+        EnsureResponseIsSuccess(response);
+
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        if(stream == null)
+        {
+#pragma warning disable CS8603 // Possible null reference return.
+            return default;
+        }
+
+        return await JsonSerializer.DeserializeAsync<TResponse?>(stream, JsonSerializerOptions, cancellationToken);
+#pragma warning restore CS8603 // Possible null reference return.
+    }
+
     private static HttpContent CreateContent(object payload) => JsonContent.Create(payload);
 
     public async Task Authenticate()
     {
         var authenticationResult = await _confidentialClientApp.AcquireTokenForClient(_context.Scope).ExecuteAsync();
         _context.Token = authenticationResult.AccessToken;
-        _logger.LogInformation(_context.Token);
+        _httpClient.Authenticate(_context.Token);
+    }
+
+    public async Task Authenticate(string token)
+    {
+        var authenticationResult = await _confidentialClientApp.AcquireTokenForClient(_context.Scope).ExecuteAsync();
+        _context.Token = authenticationResult.AccessToken;
         _httpClient.Authenticate(_context.Token);
     }
 
@@ -103,6 +129,22 @@ public sealed class ApiClient : IApiClient
     public async Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action)
     {
         await Authenticate();
+        T result;
+        try
+        {
+            result = await action();
+        }
+        finally
+        {
+            Logout();
+        }
+
+        return result;
+    }
+
+    public async Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action, string token)
+    {
+        await Authenticate(token);
         T result;
         try
         {

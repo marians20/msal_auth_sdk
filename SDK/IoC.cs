@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Client;
+using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
 using SDK.Extensions;
 using SDK.Models;
 using SDK.Services.ClientApplications;
@@ -60,6 +61,6 @@ public static class IoC
 
     private static IServiceCollection RegisterServices(this IServiceCollection services) =>
         services
-        .AddScoped<IClientApplicationsUrlsFactory, ClientApplicationsUrlsFactory>()
-        .AddScoped<ICLientApplicationsService, CLientApplicationsService>();
+        .AddScoped<IClientApplicationUrlsFactory, ClientApplicationsUrlFactory>()
+        .AddScoped<IClientApplicationService, ClientApplicationService>();
 }

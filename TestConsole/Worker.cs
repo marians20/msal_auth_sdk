@@ -1,17 +1,15 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using SDK;
-using SDK.Models;
-using SDK.Services.ClientApplications;
+using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
 
 namespace TestConsole;
 
 internal class Worker : BackgroundService
 {
-    private readonly ICLientApplicationsService _service;
+    private readonly IClientApplicationService _service;
     private readonly ILogger<Worker> _logger;
 
-    public Worker(ICLientApplicationsService service, ILogger<Worker> logger)
+    public Worker(IClientApplicationService service, ILogger<Worker> logger)
     {
         _service = service;
         _logger = logger;
@@ -21,8 +19,8 @@ internal class Worker : BackgroundService
     {
         try
         {
-            var result = await _service.GetAllAsync();
-            _logger.LogInformation($"{result?.Count()}");
+            var result = await _service.GetByIdAsync(Guid.NewGuid());
+            _logger.LogInformation($"{result}");
         }
         catch (Exception ex)
         {

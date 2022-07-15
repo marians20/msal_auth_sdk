@@ -4,6 +4,8 @@
     {
         Task Authenticate();
 
+        Task Authenticate(string token);
+
         void Logout();
 
         Task<string> Get(string url, CancellationToken cancellationToken = default);
@@ -20,6 +22,10 @@
 
         Task Delete(string url, CancellationToken cancellationToken = default);
 
+        Task<TResponse> Delete<TResponse>(string url, CancellationToken cancellationToken = default);
+
         Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action);
+
+        Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action, string token);
     }
 }
