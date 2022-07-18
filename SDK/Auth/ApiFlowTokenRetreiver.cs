@@ -1,4 +1,6 @@
-﻿using Microsoft.Identity.Client;
+﻿using CSharpFunctionalExtensions;
+using Microsoft.Identity.Client;
+using SDK.Extensions;
 using SDK.Models;
 
 namespace SDK.Auth;
@@ -15,9 +17,8 @@ internal sealed class ApiFlowTokenRetreiver : IApiFlowTokenRetreiver
         _confidentialClientApp = confidentialClientApp ?? throw new ArgumentNullException(nameof(confidentialClientApp));
     }
 
-    public async Task<string> GetTokenAsync(CancellationToken cancellationToken = default)
-    {
-        var authenticationResult = await _confidentialClientApp.AcquireTokenForClient(_settings.Scope).ExecuteAsync(cancellationToken);
-        return authenticationResult.AccessToken;
-    }
+    public async Task<Result<string>> GetTokenAsync(CancellationToken cancellationToken = default) =>
+        await TryCatch.ExecuteAsync(() => _confidentialClientApp.AcquireTokenForClient(_settings.Scope).ExecuteAsync(cancellationToken))
+            .OnSuccessTry(authenticationResult => authenticationResult.AccessToken)
+            .OnFailure(error => Result.Failure<string>(error));
 }

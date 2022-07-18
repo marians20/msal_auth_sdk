@@ -1,4 +1,5 @@
-﻿using SDK.Auth;
+﻿using CSharpFunctionalExtensions;
+using SDK.Auth;
 using System.Net.Http;
 
 namespace SDK.DataAdapters
@@ -18,8 +19,8 @@ namespace SDK.DataAdapters
 
         public string? Token { get; set; }
 
-        public async Task<string> RetreiveTokenAsync(CancellationToken cancellationToken = default) =>
-            Token = await _tokenRetreiver.GetTokenAsync(cancellationToken);
+        public async Task<Result<string>> RetreiveTokenAsync(CancellationToken cancellationToken = default) =>
+            await _tokenRetreiver.GetTokenAsync(cancellationToken).OnSuccessTry(token => Token = token);
 
         public HttpClient CreateClient() => _clientFactory.CreateClient("SDK");
     }

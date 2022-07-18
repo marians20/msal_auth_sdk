@@ -1,7 +1,9 @@
-﻿namespace SDK.Auth
+﻿using CSharpFunctionalExtensions;
+
+namespace SDK.Auth
 {
     public interface IApiFlowTokenRetreiver
     {
-        Task<string> GetTokenAsync(CancellationToken cancellationToken = default);
+        Task<Result<string>> GetTokenAsync(CancellationToken cancellationToken = default);
     }
 }

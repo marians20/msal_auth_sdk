@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
 using SDK.DataAdapters;
@@ -20,18 +21,12 @@ internal class Worker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        try
+        await _client.ExecuteAuthenticated(async () =>
         {
-            await _client.ExecuteAuthenticated(async () => {
-                var result = await _service.GetByIdAsync(Guid.NewGuid());
-                _logger.LogInformation($"{result}");
-                return result;
-            });
-
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine(ex.ToString());
-        }
+            var result = await _service.GetByIdAsync(Guid.NewGuid());
+            _logger.LogInformation($"{result}");
+            return result;
+        }).OnFailure(authError => _logger.LogError($"Authentication Error: {authError}"))
+        .OnSuccessTry(result => result.OnFailure(error => _logger.LogError($"Api Invokation Error: {error}")));
     }
 }

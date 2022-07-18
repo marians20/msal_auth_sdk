@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using CSharpFunctionalExtensions;
+using Microsoft.Extensions.Logging;
 using SDK.Extensions;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -14,8 +15,9 @@ public sealed class ApiClient : IApiClient
 
     private readonly HttpClient _httpClient;
     private readonly IApiClientContext _context;
+    private readonly ILogger<ApiClient> _logger;
 
-    public ApiClient(IApiClientContext context)
+    public ApiClient(IApiClientContext context, ILogger<ApiClient> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _httpClient = _context.CreateClient() ?? throw new NullReferenceException(nameof(_httpClient));
@@ -24,6 +26,7 @@ public sealed class ApiClient : IApiClient
         {
             _httpClient.Authenticate(_context.Token);
         }
+        _logger = logger;
     }
 
     public async Task<string> Get(string url, CancellationToken cancellationToken = default) => await _httpClient.GetStringAsync(url, cancellationToken);
@@ -94,11 +97,13 @@ public sealed class ApiClient : IApiClient
 
     private static HttpContent CreateContent(object payload) => JsonContent.Create(payload);
 
-    public async Task Authenticate()
-    {
-        _context.Token = await _context.RetreiveTokenAsync().ConfigureAwait(false);
-        _httpClient.Authenticate(_context.Token);
-    }
+    public async Task<Result> Authenticate() =>
+        await _context.RetreiveTokenAsync().OnSuccessTry(token =>
+        {
+            _context.Token = token;
+            _httpClient.Authenticate(_context.Token);
+        })
+        .OnFailure(error => _logger.LogError(error));
 
     public async Task Authenticate(string token)
     {
@@ -113,29 +118,17 @@ public sealed class ApiClient : IApiClient
         _httpClient.DefaultRequestHeaders.Remove(Constants.AuthorizationHeader);
     }
 
-    public async Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action)
-    {
-        await Authenticate();
-        T result;
-        try
-        {
-            result = await action();
-        }
-        finally
-        {
-            Logout();
-        }
+    public async Task<Result<Result<T>>> ExecuteAuthenticated<T>(Func<Task<T>> func) =>
+        await Authenticate().OnSuccessTry(async () =>
+        await TryCatch.TryCatchFinallyAsync(func, Logout));
 
-        return result;
-    }
-
-    public async Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action, string token)
+    public async Task<T> ExecuteAuthenticated<T>(Func<Task<T>> func, string token)
     {
         await Authenticate(token);
         T result;
         try
         {
-            result = await action();
+            result = await func();
         }
         finally
         {

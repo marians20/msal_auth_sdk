@@ -1,10 +1,11 @@
-﻿namespace SDK.DataAdapters
-{
-    public interface IApiClientContext
-    {
-        string? Token { get; set; }
+﻿using CSharpFunctionalExtensions;
 
-        HttpClient CreateClient();
-        Task<string> RetreiveTokenAsync(CancellationToken cancellationToken = default);
-    }
+namespace SDK.DataAdapters;
+
+public interface IApiClientContext
+{
+    string? Token { get; set; }
+
+    HttpClient CreateClient();
+    Task<Result<string>> RetreiveTokenAsync(CancellationToken cancellationToken = default);
 }

@@ -1,8 +1,10 @@
-﻿namespace SDK.DataAdapters
+﻿using CSharpFunctionalExtensions;
+
+namespace SDK.DataAdapters
 {
     public interface IApiClient
     {
-        Task Authenticate();
+        Task<Result> Authenticate();
 
         Task Authenticate(string token);
 
@@ -24,8 +26,8 @@
 
         Task<TResponse> Delete<TResponse>(string url, CancellationToken cancellationToken = default);
 
-        Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action);
+        Task<Result<Result<T>>> ExecuteAuthenticated<T>(Func<Task<T>> func);
 
-        Task<T> ExecuteAuthenticated<T>(Func<Task<T>> action, string token);
+        Task<T> ExecuteAuthenticated<T>(Func<Task<T>> func, string token);
     }
 }

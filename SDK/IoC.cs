@@ -14,6 +14,7 @@ public static class IoC
 {
     public static IServiceCollection RegisterSDK(this IServiceCollection services)
     {
+        //services.AddValidatedOptions<SmtpOptions, SmtpOptionsValidator>().Bind(this.configuration.GetSection(nameof(SmtpOptions)));
         IConfiguration config = BuildConfiguration();
         var sdkSettings = config.GetSection("Api").Get<SdkSettings>();
         var oauth2Settings = config.GetSection("OAuth2").Get<Oauth2Settings>();
