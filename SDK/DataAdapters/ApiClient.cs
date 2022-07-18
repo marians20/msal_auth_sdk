@@ -1,41 +1,29 @@
 ﻿using Microsoft.Extensions.Logging;
-using Microsoft.Identity.Client;
 using SDK.Extensions;
-using SDK.Models;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace SDK;
+namespace SDK.DataAdapters;
 
 public sealed class ApiClient : IApiClient
 {
-    private static readonly JsonSerializerOptions JsonSerializerOptions = new ()
+    private static readonly JsonSerializerOptions JsonSerializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
     private readonly HttpClient _httpClient;
-    private readonly IHttpClientFactory _clientFactory;
-    private readonly IConfidentialClientApplication _confidentialClientApp;
-    private readonly SdkContext _context;
-    private readonly ILogger<ApiClient> _logger;
-    public ApiClient(
-        IHttpClientFactory clientFactory,
-        IConfidentialClientApplication confidentialClientApp,
-        SdkContext context,
-        ILogger<ApiClient> logger)
+    private readonly IApiClientContext _context;
+
+    public ApiClient(IApiClientContext context)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _context = context ?? throw new ArgumentNullException(nameof(context));
-        _clientFactory = clientFactory ?? throw new ArgumentNullException(nameof(clientFactory));
-        _httpClient = _clientFactory.CreateClient("SDK") ?? throw new NullReferenceException(nameof(_httpClient));
-        if(!string.IsNullOrEmpty(_context.Token))
+        _httpClient = _context.CreateClient() ?? throw new NullReferenceException(nameof(_httpClient));
+
+        if (!string.IsNullOrEmpty(_context.Token))
         {
             _httpClient.Authenticate(_context.Token);
         }
-
-        _confidentialClientApp = confidentialClientApp ?? throw new ArgumentNullException(nameof(confidentialClientApp));
-        
     }
 
     public async Task<string> Get(string url, CancellationToken cancellationToken = default) => await _httpClient.GetStringAsync(url, cancellationToken);
@@ -64,7 +52,7 @@ public sealed class ApiClient : IApiClient
     {
         var response = await _httpClient.PostAsync(url, CreateContent(payload), cancellationToken);
         EnsureResponseIsSuccess(response);
-        if(response == null)
+        if (response == null)
         {
             return default;
         }
@@ -94,7 +82,7 @@ public sealed class ApiClient : IApiClient
         EnsureResponseIsSuccess(response);
 
         using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
-        if(stream == null)
+        if (stream == null)
         {
 #pragma warning disable CS8603 // Possible null reference return.
             return default;
@@ -108,21 +96,20 @@ public sealed class ApiClient : IApiClient
 
     public async Task Authenticate()
     {
-        var authenticationResult = await _confidentialClientApp.AcquireTokenForClient(_context.Scope).ExecuteAsync();
-        _context.Token = authenticationResult.AccessToken;
+        _context.Token = await _context.RetreiveTokenAsync().ConfigureAwait(false);
         _httpClient.Authenticate(_context.Token);
     }
 
     public async Task Authenticate(string token)
     {
-        var authenticationResult = await _confidentialClientApp.AcquireTokenForClient(_context.Scope).ExecuteAsync();
-        _context.Token = authenticationResult.AccessToken;
+        _context.Token = token;
         _httpClient.Authenticate(_context.Token);
+        await Task.CompletedTask;
     }
 
     public void Logout()
     {
-        _context.Token = String.Empty;
+        _context.Token = string.Empty;
         _httpClient.DefaultRequestHeaders.Remove(Constants.AuthorizationHeader);
     }
 

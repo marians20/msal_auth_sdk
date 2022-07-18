@@ -2,6 +2,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Identity.Client;
 using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
+using SDK.Auth;
+using SDK.DataAdapters;
 using SDK.Extensions;
 using SDK.Models;
 using SDK.Services.ClientApplications;
@@ -18,11 +20,13 @@ public static class IoC
 
         services
             .AddSingleton(sdkSettings)
-            .AddSingleton(new SdkContext(oauth2Settings.FinalScope))
+            .AddSingleton(oauth2Settings)
+            .AddScoped<IApiFlowTokenRetreiver, ApiFlowTokenRetreiver>()
+            .AddScoped<IApiClientContext, ApiClientContext>()
             .AddHttpClient("SDK", httpClient =>
             {
                 var serviceProvider = services.BuildServiceProvider();
-                var sdkContext = serviceProvider.GetService<SdkContext>();
+                var sdkContext = serviceProvider.GetService<ApiClientContext>();
                 httpClient.DefaultRequestHeaders.Add(Constants.AcceptHeader, Constants.AcceptHeaderValues.Json);
 
                 if (!string.IsNullOrEmpty(sdkContext?.Token))

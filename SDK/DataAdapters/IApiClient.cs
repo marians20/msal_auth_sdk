@@ -1,4 +1,4 @@
-﻿namespace SDK
+﻿namespace SDK.DataAdapters
 {
     public interface IApiClient
     {

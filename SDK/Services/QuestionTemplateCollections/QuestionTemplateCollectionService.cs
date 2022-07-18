@@ -1,15 +1,14 @@
 ﻿using Microsoft.Rise.FeedbackService.Contracts.Dto;
 using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
+using SDK.DataAdapters;
 
 namespace SDK.Services.QuestionTemplateCollections;
 
-internal class QuestionTemplateCollectionService : IQuestionTemplateCollectionService
+internal class QuestionTemplateCollectionService : ServiceBase, IQuestionTemplateCollectionService
 {
-    private readonly IApiClient _client;
 
-    public QuestionTemplateCollectionService(IApiClient client)
+    public QuestionTemplateCollectionService(IApiClient client) : base(client)
     {
-        _client = client;
     }
 
     public Task<QuestionTemplateCollectionDto> CreateAsync(QuestionTemplateCollectionDto questionTemplateCollection)

@@ -1,16 +1,15 @@
 ﻿using Microsoft.Rise.FeedbackService.Contracts.Dto;
 using Microsoft.Rise.FeedbackService.Core.Interfaces.Services;
+using SDK.DataAdapters;
 
 namespace SDK.Services.ClientApplications;
 
-internal sealed class ClientApplicationService : IClientApplicationService
+internal sealed class ClientApplicationService : ServiceBase, IClientApplicationService
 {
-    private readonly IApiClient _client;
     private readonly IClientApplicationUrlsFactory _urlBuilder;
 
-    public ClientApplicationService(IApiClient client, IClientApplicationUrlsFactory urlBuilder)
+    public ClientApplicationService(IApiClient client, IClientApplicationUrlsFactory urlBuilder) : base(client)
     {
-        _client = client;
         _urlBuilder = urlBuilder;
     }
 
